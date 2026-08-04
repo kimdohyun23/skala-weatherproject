@@ -159,7 +159,7 @@ function loadEarthTexture() {
       resolve()
     })
 
-    image.src = '/earth-blue-marble.jpg'
+    image.src = `${import.meta.env.BASE_URL}earth-blue-marble.jpg`
   })
 }
 
