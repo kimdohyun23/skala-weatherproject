@@ -5,7 +5,9 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // GitHub Pages는 저장소 이름 아래 경로에서 서비스됩니다.
+  base: mode === 'github-pages' ? '/skala-weatherproject/' : '/',
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
@@ -21,4 +23,4 @@ export default defineConfig({
   build: {
     outDir: 'dist', // 최종 정적 리소스(HTML, JS, CSS)가 저장될 출력 디렉토리명 지정
   },
-})
+}))
