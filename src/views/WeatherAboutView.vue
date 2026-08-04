@@ -3,8 +3,8 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const handleGoHome = () => {
-  router.push('/')
+const handleGoDashboard = () => {
+  router.push('/dashboard')
 }
 </script>
 
@@ -68,7 +68,7 @@ const handleGoHome = () => {
       </p>
     </div>
 
-    <button @click="handleGoHome" class="home-btn">대시보드 홈으로 이동</button>
+    <button @click="handleGoDashboard" class="home-btn">실시간 대시보드로 이동</button>
   </div>
 </template>
 

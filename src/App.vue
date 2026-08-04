@@ -56,7 +56,7 @@ onMounted(() => {
       <!-- 왼쪽: 날씨 비주얼과 현재 지역 요약 -->
       <section class="left-panel">
         <div class="left-topline">
-          <RouterLink to="/" class="brand-mark" aria-label="하늘결 홈">
+          <RouterLink to="/dashboard" class="brand-mark" aria-label="하늘결 실시간 대시보드">
             <span class="brand-sun" />
             <strong>하늘결</strong>
           </RouterLink>
@@ -104,8 +104,6 @@ onMounted(() => {
       <section class="right-panel">
         <div class="title-row">
           <nav class="nav-bar" aria-label="주요 메뉴">
-            <RouterLink to="/" class="nav-item">🏠 홈</RouterLink>
-            <span class="divider">|</span>
             <RouterLink to="/dashboard" class="nav-item">🌦️ 실시간 대시보드</RouterLink>
             <span class="divider">|</span>
             <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>

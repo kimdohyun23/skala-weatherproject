@@ -1,16 +1,9 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import WeatherHomeView from '../views/WeatherHomeView.vue'
 
 const routes = [
   {
     path: '/',
-    name: 'WeatherHome',
-    component: WeatherHomeView,
-  }, // ← 콤마 추가 (이게 빠져있었음)
-  {
-    path: '/about',
-    name: 'WeatherAbout',
-    component: () => import('../views/WeatherAboutView.vue'),
+    redirect: '/dashboard',
   },
   {
     path: '/dashboard',
@@ -18,14 +11,13 @@ const routes = [
     component: () => import('../views/WeatherLiveDashboardView.vue'),
   },
   {
-    path: '/weather/:cityId',
-    name: 'WeatherDetail',
-    component: () => import('../views/WeatherDetailView.vue'),
+    path: '/about',
+    name: 'WeatherAbout',
+    component: () => import('../views/WeatherAboutView.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    component: () => import('../views/NotFoundView.vue'),
+    redirect: '/dashboard',
   },
 ]
 
