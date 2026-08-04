@@ -814,3 +814,35 @@ button.theme-toggle:hover { opacity: 0.78; }
     transition-duration: 0.01ms !important;
   }
 }
+/* 작은 글씨 가독성 개선 */
+.global-status,
+.left-summary span,
+.left-footer span,
+.right-panel .detail-label,
+.right-panel .feels-like,
+.right-panel .description,
+.right-panel li {
+  font-weight: 600;
+}
+
+/* 너무 작은 글씨 크기도 조금 확대 */
+.left-summary span {
+  font-size: 10px;
+}
+
+.left-footer span {
+  font-size: 10px;
+}
+
+.global-status {
+  font-size: 11px;
+}
+
+.right-panel .detail-label {
+  font-size: 10px !important;
+}
+
+.right-panel .description,
+.right-panel .feels-like {
+  font-size: 13px;
+}
