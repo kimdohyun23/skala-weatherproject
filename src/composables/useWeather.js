@@ -3,6 +3,31 @@ import { computed, ref } from 'vue'
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
 
 const now = Math.floor(Date.now() / 1000)
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
+
+function getLocationDate(timestamp, timezone = 0) {
+  const parsedTimestamp = Number(timestamp)
+  const parsedTimezone = Number(timezone)
+  const safeTimestamp = Number.isFinite(parsedTimestamp) ? parsedTimestamp : Date.now() / 1000
+  const safeTimezone = Number.isFinite(parsedTimezone) ? parsedTimezone : 0
+  return new Date((safeTimestamp + safeTimezone) * 1000)
+}
+
+export function formatWeatherDate(timestamp, timezone = 0) {
+  const date = getLocationDate(timestamp, timezone)
+  return `${date.getUTCFullYear()}년 ${date.getUTCMonth() + 1}월 ${date.getUTCDate()}일 ${WEEKDAYS[date.getUTCDay()]}요일`
+}
+
+export function formatWeatherClock(timestamp, timezone = 0) {
+  const date = getLocationDate(timestamp, timezone)
+  const hour = String(date.getUTCHours()).padStart(2, '0')
+  const minute = String(date.getUTCMinutes()).padStart(2, '0')
+  return `${hour}시 ${minute}분`
+}
+
+export function formatWeatherObservation(timestamp, timezone = 0) {
+  return `${formatWeatherDate(timestamp, timezone)} · ${formatWeatherClock(timestamp, timezone)} 기준`
+}
 
 const weather = ref({
   location: '서울',
@@ -35,6 +60,8 @@ const consentOpen = ref(sessionStorage.getItem('location-consent-seen') !== 'tru
 let initialized = false
 
 const conditionClass = computed(() => `weather-visual--${weather.value.condition.toLowerCase()}`)
+const weatherDateLabel = computed(() => `${formatWeatherDate(weather.value.updatedAt, weather.value.timezone)} 기준`)
+const weatherUpdatedLabel = computed(() => `${formatWeatherClock(weather.value.updatedAt, weather.value.timezone)} 업데이트 · OpenWeather`)
 
 function weatherGlyph(condition) {
   if (condition === 'Clear') return '☀'
@@ -90,7 +117,7 @@ async function loadWeather(lat, lon) {
     pm25: airNow?.components?.pm2_5 ?? null,
     pm10: airNow?.components?.pm10 ?? null,
   }
-  notice.value = '방금 업데이트 · OpenWeather'
+  notice.value = weatherUpdatedLabel.value
 }
 
 async function selectLocation(lat, lon, label = '선택한 지역') {
@@ -164,6 +191,8 @@ export function useWeather() {
     notice,
     consentOpen,
     conditionClass,
+    weatherDateLabel,
+    weatherUpdatedLabel,
     initializeWeather,
     selectLocation,
     requestLocation,

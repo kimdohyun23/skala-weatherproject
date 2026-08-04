@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { activityLogger } from '../../utils/activityLogger.js'
 import { useConfigStore } from '../../stores/configStore.js'
+import { formatWeatherObservation, useWeather } from '../../composables/useWeather.js'
 
 const configStore = useConfigStore()
+const { weather, selectLocation } = useWeather()
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
 
 const cityList = ref([])
@@ -31,9 +33,7 @@ function getMoodMessage(temp, humidity) {
 // 1단계: Geocoding API로 도시명 → 위도/경도 + 현지명 조회
 // -------------------------------
 async function geocodeCity(query) {
-  const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
-    query
-  )}&limit=1&appid=${API_KEY}`
+  const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(query)}&limit=1&appid=${API_KEY}`
 
   const res = await fetch(url)
   if (!res.ok) {
@@ -129,6 +129,8 @@ async function addCity() {
       windSpeed: weatherData.wind.speed,
       description: weatherData.weather[0].description,
       icon: weatherData.weather[0].icon,
+      updatedAt: weatherData.dt,
+      timezone: weatherData.timezone,
     }
 
     cityList.value.push(cityData)
@@ -148,6 +150,29 @@ async function addCity() {
   } finally {
     isLoading.value = false
   }
+}
+
+function cityObservationLabel(city) {
+  if (!city.updatedAt) return '저장된 날씨 · 카드를 눌러 최신 정보 확인'
+  return formatWeatherObservation(city.updatedAt, city.timezone)
+}
+
+function isSelectedCity(city) {
+  return Math.abs(Number(weather.value.lat) - Number(city.lat)) < 0.01 && Math.abs(Number(weather.value.lon) - Number(city.lon)) < 0.01
+}
+
+async function selectCity(city) {
+  if (!Number.isFinite(Number(city.lat)) || !Number.isFinite(Number(city.lon))) {
+    errorMsg.value = '이 도시는 위치 정보가 없어 다시 검색해야 합니다.'
+    return
+  }
+
+  errorMsg.value = ''
+  activityLogger.info('대시보드', '도시 카드를 메인 날씨로 선택', {
+    city: city.displayName,
+  })
+  await selectLocation(city.lat, city.lon, city.displayName)
+  document.querySelector('.left-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function removeCity(id) {
@@ -200,7 +225,11 @@ onMounted(() => {
           data-activity-search
           @compositionstart="isComposing = true"
           @compositionend="isComposing = false"
-          @keyup.enter="() => { if (!isComposing) addCity() }"
+          @keyup.enter="
+            () => {
+              if (!isComposing) addCity()
+            }
+          "
           placeholder="도시 이름 입력 (한글 또는 영문, 예: 서울, Seoul)"
         />
         <button class="btn-detail" @click="addCity" :disabled="isLoading">
@@ -212,21 +241,32 @@ onMounted(() => {
 
     <section class="list-box">
       <h3>🏙️ 등록된 도시 날씨</h3>
+      <p class="card-guide">도시 카드를 누르면 왼쪽 메인 화면에서 최신 날씨와 세부 정보를 확인할 수 있습니다.</p>
 
-      <div v-for="city in cityList" :key="city.id" class="weather-card">
+      <div
+        v-for="city in cityList"
+        :key="city.id"
+        class="weather-card"
+        :class="{ selected: isSelectedCity(city) }"
+        role="button"
+        tabindex="0"
+        :aria-label="`${city.displayName} 날씨를 왼쪽 메인 화면에서 보기`"
+        @click="selectCity(city)"
+        @keydown.enter.self="selectCity(city)"
+      >
         <div class="card-header">
           <h4>{{ city.displayName }}</h4>
-          <button class="btn-delete" @click="removeCity(city.id)">✕ 삭제</button>
+          <button class="btn-delete" @click.stop="removeCity(city.id)">✕ 삭제</button>
         </div>
+        <p class="card-observed-at">{{ cityObservationLabel(city) }}</p>
+        <span v-if="isSelectedCity(city)" class="selected-label">● 왼쪽 화면에 표시 중</span>
 
         <div class="weather-main">
-          <img
-            :src="`https://openweathermap.org/img/wn/${city.icon}@2x.png`"
-            :alt="city.description"
-            class="weather-icon"
-          />
+          <img :src="`https://openweathermap.org/img/wn/${city.icon}@2x.png`" :alt="city.description" class="weather-icon" />
           <div class="temp-info">
-            <p class="temp-big">{{ configStore.formatTemperature(city.temp) }}</p>
+            <p class="temp-big">
+              {{ configStore.formatTemperature(city.temp) }}
+            </p>
             <p class="feels-like">체감 {{ configStore.formatTemperature(city.feelsLike) }}</p>
           </div>
         </div>
@@ -260,14 +300,10 @@ onMounted(() => {
           {{ getMoodMessage(city.temp, city.humidity).text }}
         </div>
 
-        <button class="btn-openweather" @click="openInOpenWeather(city.id)">
-          🌐 OpenWeather에서 상세보기
-        </button>
+        <button class="btn-openweather" @click.stop="openInOpenWeather(city.id)">🌐 OpenWeather에서 상세보기</button>
       </div>
 
-      <p v-if="cityList.length === 0" style="text-align: center; color: #888; padding: 20px 0">
-        검색해서 도시를 추가해보세요 🔍
-      </p>
+      <p v-if="cityList.length === 0" style="text-align: center; color: #888; padding: 20px 0">검색해서 도시를 추가해보세요 🔍</p>
     </section>
   </div>
 </template>
@@ -280,6 +316,48 @@ onMounted(() => {
 
 .search-input-row input {
   flex: 1;
+}
+
+.card-guide {
+  margin: -4px 0 14px;
+  color: var(--muted-color);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.weather-card {
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.weather-card:hover,
+.weather-card:focus-visible {
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.weather-card.selected {
+  border-color: #55a8ca !important;
+  box-shadow:
+    0 0 0 3px rgba(85, 168, 202, 0.16),
+    var(--shadow) !important;
+}
+
+.card-observed-at {
+  margin: 5px 0 0;
+  color: var(--muted-color);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.selected-label {
+  display: inline-block;
+  margin-top: 7px;
+  color: #2384a9;
+  font-size: 9px;
+  font-weight: 850;
 }
 
 .card-header {

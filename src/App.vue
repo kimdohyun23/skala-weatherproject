@@ -7,15 +7,7 @@ import { useConfigStore } from './stores/configStore.js'
 // --- 보내주신 App.vue의 다크모드 상태 관리 ---
 const isDark = ref(false)
 const configStore = useConfigStore()
-const {
-  weather,
-  loading,
-  notice,
-  consentOpen,
-  initializeWeather,
-  requestLocation,
-  dismissConsent,
-} = useWeather()
+const { weather, loading, notice, consentOpen, weatherDateLabel, initializeWeather, requestLocation, dismissConsent } = useWeather()
 
 const conditionClass = computed(() => `weather-visual--${weather.value.condition.toLowerCase()}`)
 
@@ -67,6 +59,7 @@ onMounted(() => {
 
         <div class="sky-copy">
           <p class="kicker">오늘, 여기의 하늘</p>
+          <p class="weather-date">{{ weatherDateLabel }}</p>
           <h1>{{ weather.location }}</h1>
           <p>{{ weather.description }}</p>
         </div>
@@ -75,9 +68,7 @@ onMounted(() => {
           <div v-if="weather.condition === 'Clear' || weather.condition === 'Clouds'" class="visual-sun" />
           <div v-if="weather.condition !== 'Clear'" class="visual-cloud visual-cloud-back" />
           <div v-if="weather.condition !== 'Clear'" class="visual-cloud visual-cloud-front" />
-          <div v-if="['Rain', 'Drizzle', 'Thunderstorm'].includes(weather.condition)" class="visual-rain">
-            <i /><i /><i /><i />
-          </div>
+          <div v-if="['Rain', 'Drizzle', 'Thunderstorm'].includes(weather.condition)" class="visual-rain"><i /><i /><i /><i /></div>
           <div v-if="weather.condition === 'Snow'" class="visual-snow">✦　✦　✦</div>
           <span class="visual-glyph">{{ weatherGlyph(weather.condition) }}</span>
         </div>
@@ -91,9 +82,15 @@ onMounted(() => {
         </div>
 
         <div class="left-summary">
-          <div><span>습도</span><strong>{{ weather.humidity }}%</strong></div>
-          <div><span>바람</span><strong>{{ weather.windSpeed.toFixed(1) }}m/s</strong></div>
-          <div><span>미세먼지</span><strong>{{ weather.pm25 === null ? '–' : Math.round(weather.pm25) }}</strong></div>
+          <div>
+            <span>습도</span><strong>{{ weather.humidity }}%</strong>
+          </div>
+          <div>
+            <span>바람</span><strong>{{ weather.windSpeed.toFixed(1) }}m/s</strong>
+          </div>
+          <div>
+            <span>미세먼지</span><strong>{{ weather.pm25 === null ? '–' : Math.round(weather.pm25) }}</strong>
+          </div>
         </div>
 
         <div class="left-footer">
@@ -113,12 +110,7 @@ onMounted(() => {
             <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
           </nav>
           <div class="display-controls">
-            <button
-              class="unit-toggle"
-              type="button"
-              :aria-label="configStore.unit === 'celsius' ? '화씨로 변경' : '섭씨로 변경'"
-              @click="configStore.toggleUnit"
-            >
+            <button class="unit-toggle" type="button" :aria-label="configStore.unit === 'celsius' ? '화씨로 변경' : '섭씨로 변경'" @click="configStore.toggleUnit">
               {{ configStore.unitSymbol }} {{ configStore.unitName }}
             </button>
             <button class="theme-toggle" type="button" @click="toggleTheme">
@@ -185,8 +177,22 @@ button.unit-toggle:hover {
   opacity: 0.78;
 }
 
+.sky-copy .weather-date {
+  margin: -2px 0 13px;
+  color: rgba(23, 56, 76, 0.66);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+[data-theme='dark'] .sky-copy .weather-date {
+  color: rgba(229, 246, 252, 0.68);
+}
+
 @media (max-width: 620px) {
-  .display-controls { gap: 4px; }
+  .display-controls {
+    gap: 4px;
+  }
   button.unit-toggle {
     padding-inline: 9px !important;
     font-size: 9px !important;

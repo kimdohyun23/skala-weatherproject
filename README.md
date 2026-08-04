@@ -1,3 +1,4 @@
+pwd
 # 하늘결 (SKALA Weather Project)
 
 OpenWeather API를 이용해 현재 위치와 검색한 도시의 실시간 날씨를 확인할 수 있는 Vue 3 기반 날씨 웹 애플리케이션입니다.
