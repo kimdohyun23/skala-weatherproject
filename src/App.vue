@@ -2,9 +2,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useWeather, weatherGlyph } from './composables/useWeather.js'
 import { activityLogger } from './utils/activityLogger.js'
+import { useConfigStore } from './stores/configStore.js'
 
 // --- 보내주신 App.vue의 다크모드 상태 관리 ---
 const isDark = ref(false)
+const configStore = useConfigStore()
 const {
   weather,
   loading,
@@ -81,10 +83,10 @@ onMounted(() => {
         </div>
 
         <div class="temperature-block">
-          <strong>{{ Math.round(weather.temp) }}°</strong>
+          <strong>{{ configStore.formatTemperature(weather.temp) }}</strong>
           <div>
-            <span>체감 {{ Math.round(weather.feelsLike) }}°</span>
-            <span>최고 {{ Math.round(weather.tempMax) }}° · 최저 {{ Math.round(weather.tempMin) }}°</span>
+            <span>체감 {{ configStore.formatTemperature(weather.feelsLike) }}</span>
+            <span>최고 {{ configStore.formatTemperature(weather.tempMax) }} · 최저 {{ configStore.formatTemperature(weather.tempMin) }}</span>
           </div>
         </div>
 
@@ -106,11 +108,23 @@ onMounted(() => {
           <nav class="nav-bar" aria-label="주요 메뉴">
             <RouterLink to="/dashboard" class="nav-item">🌦️ 실시간 대시보드</RouterLink>
             <span class="divider">|</span>
+            <RouterLink to="/earth" class="nav-item">🌍 지구의 날씨</RouterLink>
+            <span class="divider">|</span>
             <RouterLink to="/about" class="nav-item">ℹ️ 서비스 소개</RouterLink>
           </nav>
-          <button class="theme-toggle" type="button" @click="toggleTheme">
-            {{ isDark ? '☀️ 라이트 모드' : '🌙 다크 모드' }}
-          </button>
+          <div class="display-controls">
+            <button
+              class="unit-toggle"
+              type="button"
+              :aria-label="configStore.unit === 'celsius' ? '화씨로 변경' : '섭씨로 변경'"
+              @click="configStore.toggleUnit"
+            >
+              {{ configStore.unitSymbol }} {{ configStore.unitName }}
+            </button>
+            <button class="theme-toggle" type="button" @click="toggleTheme">
+              {{ isDark ? '☀️ 라이트 모드' : '🌙 다크 모드' }}
+            </button>
+          </div>
         </div>
         <hr />
 
@@ -139,4 +153,43 @@ onMounted(() => {
 
 <style>
 @import './assets/exercise.css';
+
+.display-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+button.unit-toggle {
+  width: auto !important;
+  display: inline-block !important;
+  padding: 7px 13px !important;
+  margin: 0 !important;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: #216f92;
+  cursor: pointer;
+  font-size: 11px !important;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] button.unit-toggle {
+  color: #b7e8f8;
+}
+
+button.unit-toggle:hover {
+  opacity: 0.78;
+}
+
+@media (max-width: 620px) {
+  .display-controls { gap: 4px; }
+  button.unit-toggle {
+    padding-inline: 9px !important;
+    font-size: 9px !important;
+  }
+}
 </style>

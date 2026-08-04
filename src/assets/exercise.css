@@ -814,6 +814,7 @@ button.theme-toggle:hover { opacity: 0.78; }
     transition-duration: 0.01ms !important;
   }
 }
+
 /* 작은 글씨 가독성 개선 */
 .global-status,
 .left-summary span,

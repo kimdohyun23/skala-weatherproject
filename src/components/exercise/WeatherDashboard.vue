@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { activityLogger } from '../../utils/activityLogger.js'
+import { useConfigStore } from '../../stores/configStore.js'
 
+const configStore = useConfigStore()
 const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY
 
 const cityList = ref([])
@@ -224,8 +226,8 @@ onMounted(() => {
             class="weather-icon"
           />
           <div class="temp-info">
-            <p class="temp-big">{{ city.temp }}°C</p>
-            <p class="feels-like">체감 {{ city.feelsLike }}°C</p>
+            <p class="temp-big">{{ configStore.formatTemperature(city.temp) }}</p>
+            <p class="feels-like">체감 {{ configStore.formatTemperature(city.feelsLike) }}</p>
           </div>
         </div>
 
@@ -246,7 +248,7 @@ onMounted(() => {
           </div>
           <div class="detail-item">
             <span class="detail-label">🌡️ 체감온도</span>
-            <span class="detail-value">{{ city.feelsLike }}°C</span>
+            <span class="detail-value">{{ configStore.formatTemperature(city.feelsLike) }}</span>
           </div>
         </div>
 

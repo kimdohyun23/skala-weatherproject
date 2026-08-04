@@ -93,6 +93,19 @@ async function loadWeather(lat, lon) {
   notice.value = '방금 업데이트 · OpenWeather'
 }
 
+async function selectLocation(lat, lon, label = '선택한 지역') {
+  loading.value = true
+  notice.value = `${label}의 날씨를 불러오는 중이에요…`
+
+  try {
+    await loadWeather(lat, lon)
+  } catch (error) {
+    notice.value = `${error.message} · 이전 날씨를 유지합니다.`
+  } finally {
+    loading.value = false
+  }
+}
+
 async function requestLocation() {
   consentOpen.value = false
   sessionStorage.setItem('location-consent-seen', 'true')
@@ -152,6 +165,7 @@ export function useWeather() {
     consentOpen,
     conditionClass,
     initializeWeather,
+    selectLocation,
     requestLocation,
     dismissConsent,
   }
