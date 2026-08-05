@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { useWeather, weatherGlyph } from '../composables/useWeather.js'
 import { activityLogger } from '../utils/activityLogger.js'
 import { useConfigStore } from '../stores/configStore.js'
-
+import { worldCities } from '../data/worldCities.js'
 const configStore = useConfigStore()
 const canvasRef = ref(null)
 const stageRef = ref(null)
@@ -25,26 +25,7 @@ let globeImageData = null
 
 const { weather, loading, selectLocation } = useWeather()
 
-const cities = [
-  { id: 'seoul', name: '서울', country: '대한민국', lat: 37.5665, lon: 126.978 },
-  { id: 'tokyo', name: '도쿄', country: '일본', lat: 35.6762, lon: 139.6503 },
-  { id: 'singapore', name: '싱가포르', country: '싱가포르', lat: 1.3521, lon: 103.8198 },
-  { id: 'bangkok', name: '방콕', country: '태국', lat: 13.7563, lon: 100.5018 },
-  { id: 'delhi', name: '뉴델리', country: '인도', lat: 28.6139, lon: 77.209 },
-  { id: 'dubai', name: '두바이', country: '아랍에미리트', lat: 25.2048, lon: 55.2708 },
-  { id: 'london', name: '런던', country: '영국', lat: 51.5072, lon: -0.1276 },
-  { id: 'paris', name: '파리', country: '프랑스', lat: 48.8566, lon: 2.3522 },
-  { id: 'cairo', name: '카이로', country: '이집트', lat: 30.0444, lon: 31.2357 },
-  { id: 'capetown', name: '케이프타운', country: '남아프리카공화국', lat: -33.9249, lon: 18.4241 },
-  { id: 'moscow', name: '모스크바', country: '러시아', lat: 55.7558, lon: 37.6173 },
-  { id: 'newyork', name: '뉴욕', country: '미국', lat: 40.7128, lon: -74.006 },
-  { id: 'losangeles', name: '로스앤젤레스', country: '미국', lat: 34.0522, lon: -118.2437 },
-  { id: 'toronto', name: '토론토', country: '캐나다', lat: 43.6532, lon: -79.3832 },
-  { id: 'mexico', name: '멕시코시티', country: '멕시코', lat: 19.4326, lon: -99.1332 },
-  { id: 'rio', name: '리우데자네이루', country: '브라질', lat: -22.9068, lon: -43.1729 },
-  { id: 'buenosaires', name: '부에노스아이레스', country: '아르헨티나', lat: -34.6037, lon: -58.3816 },
-  { id: 'sydney', name: '시드니', country: '호주', lat: -33.8688, lon: 151.2093 },
-]
+const cities = worldCities
 
 const landRegions = [
   { lat: 48, lon: -108, latRadius: 23, lonRadius: 34 },
