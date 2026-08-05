@@ -1,14 +1,27 @@
-import './assets/main.css'
-
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-
 
 import App from './App.vue'
 import router from './router'
 import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
 import { activityLogger, installActivityLogger } from './utils/activityLogger.js'
+
+// Element Plus 스타일
+import 'element-plus/dist/index.css'
+import 'element-plus/theme-chalk/dark/css-vars.css'
+
+// 프로젝트 스타일은 Element Plus 스타일 다음에 불러옵니다.
+import './assets/main.css'
+
+// 저장된 테마가 있으면 사용하고, 없으면 기기 설정을 따릅니다.
+const savedTheme = localStorage.getItem('theme')
+
+const initialDark =
+  savedTheme !== null
+    ? savedTheme === 'dark'
+    : window.matchMedia('(prefers-color-scheme: dark)').matches
+
+document.documentElement.classList.toggle('dark', initialDark)
 
 const app = createApp(App)
 

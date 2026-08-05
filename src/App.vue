@@ -1,17 +1,32 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useWeather, weatherGlyph } from './composables/useWeather.js'
 import { activityLogger } from './utils/activityLogger.js'
 import { useConfigStore } from './stores/configStore.js'
-
-// --- 보내주신 App.vue의 다크모드 상태 관리 ---
+import ThemeSwitch from './components/exercise/ThemeSwitch.vue'
 const isDark = ref(false)
 const configStore = useConfigStore()
-const { weather, loading, notice, consentOpen, weatherDateLabel, initializeWeather, requestLocation, dismissConsent } = useWeather()
 
-const conditionClass = computed(() => `weather-visual--${weather.value.condition.toLowerCase()}`)
+const {
+  weather,
+  loading,
+  notice,
+  consentOpen,
+  weatherDateLabel,
+  initializeWeather,
+  requestLocation,
+  dismissConsent,
+} = useWeather()
+
+const conditionClass = computed(
+  () => `weather-visual--${weather.value.condition.toLowerCase()}`,
+)
 
 function applyTheme(dark) {
+  // Element Plus 다크 모드
+  document.documentElement.classList.toggle('dark', dark)
+
+  // 기존 프로젝트 CSS 호환
   if (dark) {
     document.documentElement.setAttribute('data-theme', 'dark')
   } else {
@@ -19,26 +34,72 @@ function applyTheme(dark) {
   }
 }
 
-function toggleTheme() {
-  isDark.value = !isDark.value
+function setTheme(dark, writeLog = true) {
+  isDark.value = dark
+  applyTheme(dark)
+  localStorage.setItem('theme', dark ? 'dark' : 'light')
+
+  if (writeLog) {
+    activityLogger.info('테마', '화면 테마 변경', {
+      theme: dark ? 'dark' : 'light',
+    })
+  }
 }
 
-watch(isDark, (newVal) => {
-  applyTheme(newVal)
-  localStorage.setItem('theme', newVal ? 'dark' : 'light')
-  activityLogger.info('테마', '화면 테마 변경', {
-    theme: newVal ? 'dark' : 'light',
+function toggleTheme(event) {
+  const nextDark = !isDark.value
+
+  const reduceMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)',
+  ).matches
+
+  if (!document.startViewTransition || reduceMotion) {
+    setTheme(nextDark)
+    return
+  }
+
+  const x = event?.clientX ?? window.innerWidth / 2
+  const y = event?.clientY ?? window.innerHeight / 2
+
+  const radius = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y),
+  )
+
+  const transition = document.startViewTransition(() => {
+    setTheme(nextDark)
   })
-})
+
+  transition.ready
+    .then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${radius}px at ${x}px ${y}px)`,
+          ],
+        },
+        {
+          duration: 500,
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        },
+      )
+    })
+    .catch(() => {
+      // 효과가 취소돼도 테마 변경은 유지합니다.
+    })
+}
 
 onMounted(() => {
-  const saved = localStorage.getItem('theme')
-  if (saved) {
-    isDark.value = saved === 'dark'
-  } else {
-    isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
-  }
-  applyTheme(isDark.value)
+  const savedTheme = localStorage.getItem('theme')
+
+  const initialDark =
+    savedTheme !== null
+      ? savedTheme === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches
+
+  setTheme(initialDark, false)
   initializeWeather()
 })
 </script>
@@ -113,9 +174,7 @@ onMounted(() => {
             <button class="unit-toggle" type="button" :aria-label="configStore.unit === 'celsius' ? '화씨로 변경' : '섭씨로 변경'" @click="configStore.toggleUnit">
               {{ configStore.unitSymbol }} {{ configStore.unitName }}
             </button>
-            <button class="theme-toggle" type="button" @click="toggleTheme">
-              {{ isDark ? '☀️ 라이트 모드' : '🌙 다크 모드' }}
-            </button>
+            <ThemeSwitch />
           </div>
         </div>
         <hr />
