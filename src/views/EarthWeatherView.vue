@@ -4,9 +4,13 @@ import { useWeather, weatherGlyph } from '../composables/useWeather.js'
 import { activityLogger } from '../utils/activityLogger.js'
 import { useConfigStore } from '../stores/configStore.js'
 import { worldCities } from '../data/worldCities.js'
+
+const SELECTED_CITY_STORAGE_KEY = 'earth-weather-selected-city'
+
 const configStore = useConfigStore()
 const canvasRef = ref(null)
 const stageRef = ref(null)
+const isGlobeFullscreen = ref(false)
 const selectedCity = ref('seoul')
 const dragging = ref(false)
 const zoom = ref(1)
@@ -417,6 +421,7 @@ function onWheel(event) {
 
 async function chooseCity(city) {
   selectedCity.value = city.id
+  sessionStorage.setItem(SELECTED_CITY_STORAGE_KEY, city.id)
   camera.lon = city.lon
   camera.lat = clamp(city.lat, -58, 58)
   scheduleDraw()
@@ -435,6 +440,49 @@ function resetGlobe() {
   scheduleDraw()
 }
 
+async function toggleGlobeFullscreen() {
+  const stage = stageRef.value
+  if (!stage) return
+
+  if (!document.fullscreenEnabled) {
+    activityLogger.warn('지구본', '이 브라우저는 전체화면을 지원하지 않습니다')
+    return
+  }
+
+  try {
+    // 이미 전체화면이면 원래 화면으로 돌아가기
+    if (document.fullscreenElement === stage) {
+      await document.exitFullscreen()
+      return
+    }
+
+    // 지구본을 전체화면으로 표시
+    await stage.requestFullscreen()
+  } catch (error) {
+    activityLogger.warn('지구본', '전체화면 전환 실패', {
+      message: error?.message || String(error),
+    })
+  }
+}
+
+function handleFullscreenChange() {
+  const wasGlobeFullscreen = isGlobeFullscreen.value
+  const isFullscreenNow = document.fullscreenElement === stageRef.value
+
+  isGlobeFullscreen.value = isFullscreenNow
+
+  // 더블클릭이나 Esc로 전체화면을 종료하면 현재 화면을 새로고침합니다.
+  if (wasGlobeFullscreen && !isFullscreenNow) {
+    window.location.reload()
+    return
+  }
+
+  // 화면 크기가 바뀐 뒤 캔버스를 다시 계산
+  requestAnimationFrame(() => {
+    resizeCanvas()
+  })
+}
+
 watch(
   () => weather.value.updatedAt,
   () => scheduleDraw(),
@@ -442,16 +490,40 @@ watch(
 
 onMounted(async () => {
   await nextTick()
+
   resizeObserver = new ResizeObserver(resizeCanvas)
   resizeObserver.observe(stageRef.value)
-  canvasRef.value.addEventListener('wheel', onWheel, { passive: false })
+
+  canvasRef.value.addEventListener('wheel', onWheel, {
+    passive: false,
+  })
+
+  document.addEventListener(
+    'fullscreenchange',
+    handleFullscreenChange,
+  )
+
   resizeCanvas()
+
+  const savedCityId = sessionStorage.getItem(SELECTED_CITY_STORAGE_KEY)
+  const savedCity = cities.find((city) => city.id === savedCityId)
+
+  if (savedCity) {
+    await chooseCity(savedCity)
+  }
+
   await loadEarthTexture()
 })
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   canvasRef.value?.removeEventListener('wheel', onWheel)
+
+  document.removeEventListener(
+    'fullscreenchange',
+    handleFullscreenChange,
+  )
+
   if (frameId) cancelAnimationFrame(frameId)
 })
 </script>
@@ -472,8 +544,13 @@ onBeforeUnmount(() => {
         <div
           ref="stageRef"
           class="globe-stage"
-          :class="{ dragging }"
-          aria-label="드래그로 회전하고 휠로 확대할 수 있는 3D 지구본"
+          :class="{ dragging, fullscreen: isGlobeFullscreen }"
+          :aria-label="
+            isGlobeFullscreen
+              ? '더블클릭하면 전체화면을 종료하는 3D 지구본'
+              : '더블클릭하면 전체화면으로 전환되는 3D 지구본'
+          "
+          @dblclick.stop.prevent="toggleGlobeFullscreen"
         >
           <canvas
             ref="canvasRef"
@@ -487,7 +564,11 @@ onBeforeUnmount(() => {
           <div class="texture-credit" :class="{ ready: textureReady }">
             <i /> {{ textureReady ? 'NASA BLUE MARBLE' : 'EARTH TEXTURE LOADING' }}
           </div>
-          <div class="globe-hint"><span>↔ 드래그 회전</span><span>⌁ 스크롤 확대</span></div>
+          <div class="globe-hint">
+            <span>↔ 드래그 회전</span>
+            <span>⌁ 스크롤 확대</span>
+            <span>{{ isGlobeFullscreen ? '⛶ 더블클릭 원래 화면' : '⛶ 더블클릭 전체화면' }}</span>
+          </div>
           <div class="zoom-meter" aria-label="확대 비율">
             <span>ZOOM</span>
             <div><i :style="{ width: `${((zoom - 0.78) / 0.84) * 100}%` }" /></div>
@@ -739,6 +820,25 @@ onBeforeUnmount(() => {
   background: var(--accent-soft);
   color: #347c9a;
   font-size: 23px;
+}
+.globe-stage:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  border-radius: 0;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(21, 70, 118, 0.35),
+      transparent 48%
+    ),
+    #01040c;
+}
+
+.globe-stage:fullscreen canvas {
+  width: 100%;
+  height: 100%;
 }
 
 .earth-weather-card h3 {
