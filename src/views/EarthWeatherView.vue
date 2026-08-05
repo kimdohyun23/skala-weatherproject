@@ -535,6 +535,7 @@ onBeforeUnmount(() => {
         <p class="earth-kicker">INTERACTIVE WEATHER GLOBE</p>
         <h2>지구의 날씨</h2>
         <p>지구본을 움직여 도시를 선택하고 지금의 하늘을 확인해 보세요.</p>
+        <p>더블 클릭시 전체화면으로 전환됩니다.</p>
       </div>
       <button type="button" class="reset-button" @click="resetGlobe">↺ 지구본 초기화</button>
     </header>
